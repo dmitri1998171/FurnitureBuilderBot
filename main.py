@@ -1,5 +1,11 @@
 import telebot, json
 
+state = 0
+
+width = 0
+sinkSize = 0
+cookingSize = 0
+
 modules = { }
 other = 0
 
@@ -19,13 +25,28 @@ bot = telebot.TeleBot(settings['token'])
 @bot.message_handler(commands=['start'])
 def start_message(message):
     bot.send_message(message.chat.id,"Привет ✌️ Я бот-сборщик мебели!")
-    bot.send_message(message.chat.id,"Отправь мне ширину кухни - я все посчитаю")
+    bot.send_message(message.chat.id,"Отправь мне ширину кухни в мм - я все посчитаю")
 
 @bot.message_handler(content_types='text')
 def get_text(message):
+    global state, width, sinkSize, cookingSize
+
     if(message.text.isnumeric()):
-        moduleCalc(int(message.text))
-        showResults(message)
+        if(state == 2):
+            cookingSize = int(message.text)
+            moduleCalc(width)
+            showResults(message)
+
+        if(state == 1):
+            sinkSize = int(message.text)
+            bot.send_message(message.chat.id,"Укажи размер плиты")
+            state = 2
+
+        if(state == 0):
+            width = int(message.text)
+            bot.send_message(message.chat.id,"Укажи размер мойки")
+            state = 1
+
     else:
         bot.send_message(message.chat.id,"Это не число")
 
@@ -67,7 +88,9 @@ def showResults(message):
     for item in modules:
         resultMessage += "С шириной " + item + " мм : " + str(modules[item]) + " шт.\n"
 
-    resultMessage += "\n" + str(other) + " мм осталось до края"
+    if(other != 0):
+        resultMessage += "\nПоследний модуль " + str(other) + " мм"
+
     bot.send_message(message.chat.id, resultMessage)
     
 
