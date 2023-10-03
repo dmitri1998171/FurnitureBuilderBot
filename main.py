@@ -35,14 +35,16 @@ def get_text(message):
         if(state == 2):
             cookingSize = int(message.text)
             moduleCalc(width)
-            showResults(message)
-
-        if(state == 1):
+            # showResultsInTable(message)
+            showResultsInRow(message)
+            state = 0
+            
+        elif(state == 1):
             sinkSize = int(message.text)
             bot.send_message(message.chat.id,"Укажи размер плиты")
             state = 2
 
-        if(state == 0):
+        elif(state == 0):
             width = int(message.text)
             bot.send_message(message.chat.id,"Укажи размер мойки")
             state = 1
@@ -81,12 +83,26 @@ def moduleCalc(width):
     print("modules: ", modules)
     print("other: ", other)
 
-def showResults(message):
+def showResultsInTable(message):
     global other
     resultMessage = 'Кол-во модулей\n\n'
 
     for item in modules:
         resultMessage += "С шириной " + item + " мм : " + str(modules[item]) + " шт.\n"
+
+    if(other != 0):
+        resultMessage += "\nПоследний модуль " + str(other) + " мм"
+
+    bot.send_message(message.chat.id, resultMessage)
+    
+def showResultsInRow(message):
+    global other
+    resultMessage = 'Модули\n\n'
+
+    for item in modules:
+        while modules[item] > 0:
+            resultMessage += item + ' '
+            modules[item] -= 1
 
     if(other != 0):
         resultMessage += "\nПоследний модуль " + str(other) + " мм"
