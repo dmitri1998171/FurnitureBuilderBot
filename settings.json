@@ -1,4 +1,6 @@
 {
-    "token":"6489203349:AAGrhJSanFmOjco7siPML0OPls5tItn_O1c",
-    "moduleWidthes": [800, 600, 400]
+    "token": "6489203349:AAGrhJSanFmOjco7siPML0OPls5tItn_O1c",
+    "moduleWidthes": [400, 500, 600, 700, 800, 900],
+    "minSize": 600,
+    "maxSize": 900
 }
