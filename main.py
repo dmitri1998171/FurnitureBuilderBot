@@ -1,13 +1,14 @@
 import telebot, json
 
 state = 0
+plankSize = 1200            # Длина доски (заготовки)
 
 width = 0
 sinkSize = 0
 cookingSize = 0
 
 modules = { }
-other = 0
+leftSpace = 0
 
 def getSettingsFromJSON():
     settings = {}
@@ -34,9 +35,10 @@ def get_text(message):
     if(message.text.isnumeric()):
         if(state == 2):
             cookingSize = int(message.text)
-            moduleCalc(width)
+            print(wallCalc(width))
+            # moduleCalc(width)
             # showResultsInTable(message)
-            showResultsInRow(message)
+            # showResultsInRow(message)
             state = 0
             
         elif(state == 1):
@@ -52,51 +54,64 @@ def get_text(message):
     else:
         bot.send_message(message.chat.id,"Это не число")
 
+def wallCalc(width):
+    plankArr = []
+    div = width / plankSize
+    base = width // plankSize
+
+    for i in range(base):
+        plankArr.append(plankSize)
+
+    if(div % 2 != 0):
+        plankArr.append(width - (base * plankSize))
+
+    return plankArr
+
 def moduleCalc(width):
-    global other, modules
+    global leftSpace, modules
 
     modules = {
         '800':0,
         '600':0,
         '400':0
     }
-    other = 0
+    leftSpace = 0
     
     cycle = True
     while cycle == True:
         if(width >= moduleWidthes[0]):
             width = width - moduleWidthes[0]
-            modules['800'] = modules['800'] + 1
+            modules['800'] += 1
 
         elif(width >= moduleWidthes[1]):
             width = width - moduleWidthes[1]
-            modules['600'] = modules['600'] + 1
+            modules['600'] += 1
 
         elif(width >= moduleWidthes[2]):
             width = width - moduleWidthes[2]
-            modules['400'] = modules['400'] + 1
+            modules['400'] += 1
 
         else:
-            other = width
+            leftSpace = width
             cycle = False
 
     print("modules: ", modules)
-    print("other: ", other)
+    print("leftSpace: ", leftSpace)
 
 def showResultsInTable(message):
-    global other
+    global leftSpace
     resultMessage = 'Кол-во модулей\n\n'
 
     for item in modules:
         resultMessage += "С шириной " + item + " мм : " + str(modules[item]) + " шт.\n"
 
-    if(other != 0):
-        resultMessage += "\nПоследний модуль " + str(other) + " мм"
+    if(leftSpace != 0):
+        resultMessage += "\nПоследний модуль " + str(leftSpace) + " мм"
 
     bot.send_message(message.chat.id, resultMessage)
     
 def showResultsInRow(message):
-    global other
+    global leftSpace
     resultMessage = 'Модули\n\n'
 
     for item in modules:
@@ -104,8 +119,8 @@ def showResultsInRow(message):
             resultMessage += item + ' '
             modules[item] -= 1
 
-    if(other != 0):
-        resultMessage += "\nПоследний модуль " + str(other) + " мм"
+    if(leftSpace != 0):
+        resultMessage += "\nПоследний модуль " + str(leftSpace) + " мм"
 
     bot.send_message(message.chat.id, resultMessage)
     
