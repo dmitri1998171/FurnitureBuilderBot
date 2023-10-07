@@ -3,5 +3,6 @@
     "moduleWidthes": [400, 500, 600, 700, 800, 900],
     "minSize": 600,
     "maxSize": 900,
-    "plankSize": 1200
+    "plankSize": 1200,
+    "defaultModule": 800
 }
