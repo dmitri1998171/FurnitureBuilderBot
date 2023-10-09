@@ -1,5 +1,7 @@
 import telebot, json
 
+modulesCounter = 0
+
 class Plank:
     def __init__(self, _width = 0, _busyWidth = 0):
         self.width = _width
@@ -21,12 +23,15 @@ class Plank:
         return self.freeWidth
     
     def addModule(self, w):
+        global modulesCounter
+
         if(w > self.freeWidth):
             print("ERROR! Can't add a new module into the plank!")
         else:
             if(w > 0):
                 self.setBusyWidth(self.busyWidth + w)
                 self.modules.append(w)
+                modulesCounter += 1
 
     def getModules(self):
         return self.modules
@@ -45,13 +50,15 @@ def createModulesHashTable():
     return modules
 
 def InitVariables():
-    global state, plankArr, width, sinkSize, cookingSize, modules
+    global state, plankArr, width, sinkSize, cookingSize, modules, leftSpace, modulesCounter
 
     state = 0
     plankArr = []
     width = 0
     sinkSize = 0
     cookingSize = 0
+    leftSpace = 0
+    modulesCounter = 0
     modules = createModulesHashTable()
 
 settings = getSettingsFromJSON()
@@ -60,6 +67,7 @@ minSize = settings['minSize']
 maxSize = settings['maxSize']
 plankSize = settings['plankSize']            # Длина доски (заготовки)
 defaultModule = settings['defaultModule']
+fillerSize = settings['fillerSize']
 
 state = 0
 plankArr = []
@@ -106,13 +114,17 @@ def get_text(message):
                 bot.send_message(message.chat.id, f"Неверный размер мойки\nmin: {minSize}\nmax: {maxSize}")
             else:
                 plankArr[0].addModule(sinkSize)
-                plankArr[0].addModule(plankArr[0].getFreeWidth())
+
+                if(width >= plankSize):
+                    plankArr[0].addModule(plankArr[0].getFreeWidth())
+                else:
+                    plankArr[0].addModule(width - plankArr[0].getBusyWidth())
 
                 if(width >= minimumForCooking):
                     bot.send_message(message.chat.id,"Укажи размер плиты")
                     state = 2
                 else:
-                    if(leftSpace != 0):
+                    if(leftSpace > fillerSize):
                         plankArr[1].addModule(leftSpace)
 
                     globalCalc(message)
@@ -146,7 +158,9 @@ def wallCalc(width):
 
         if(div % 2 != 0):
             leftSpace = width - (base * plankSize)
-            plankArr.append(Plank(leftSpace))
+
+            if(leftSpace > fillerSize):
+                plankArr.append(Plank(leftSpace))
     else:
         plankArr.append(Plank(plankSize))
 
@@ -171,11 +185,11 @@ def moduleCalc():
 def showResultsInTable(message):
     global leftSpace
     
-    totalSize = len(plankArr)
-    resultMessage = f'Кол-во модулей: {totalSize}\n\n'
+    plankArrSize = len(plankArr)
+    resultMessage = f'Кол-во модулей: {modulesCounter}\n\n'
 
     i = 0
-    while i in range(totalSize):
+    while i in range(plankArrSize):
         resultMessage += str(plankArr[i].getModules())
 
         if(i == 0):
@@ -187,6 +201,9 @@ def showResultsInTable(message):
 
         resultMessage += '\n'
         i += 1
+
+    if(leftSpace <= fillerSize and leftSpace > 0):
+        resultMessage += f"Заглушка: {leftSpace}\n"
 
     bot.send_message(message.chat.id, resultMessage)
     

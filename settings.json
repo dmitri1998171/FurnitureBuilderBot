@@ -4,5 +4,6 @@
     "minSize": 600,
     "maxSize": 900,
     "plankSize": 1200,
-    "defaultModule": 800
+    "defaultModule": 800,
+    "fillerSize": 80
 }
