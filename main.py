@@ -89,16 +89,14 @@ def buttonPressedCheck(message):
     global menuState
 
     if(message.text == "Рассчет кол-ва модулей"):
-        print("Рассчет кол-ва модулей")
-        
         menuState = 1
+        InitVariables()
         bot.send_message(message.chat.id, "Отправь мне ширину кухни в мм - я все посчитаю")
         return menuState
 
     if(message.text == "Рассчет цены"):
-        print("Рассчет цены")
-
         menuState = 2
+        InitVariables()
         bot.send_message(message.chat.id, "         ")
         return menuState
     
@@ -124,11 +122,8 @@ def get_text(message):
 
     if(menuState == 2):
         print("menuState: ", menuState)
-        # buttonPressedCheck(message)
 
     if(menuState == 1):
-        print("menuState: ", menuState)
-
         if(message.text.isnumeric()):
             if(moduleCalcState == 2):
                 cookingSize = int(message.text)
@@ -148,6 +143,8 @@ def get_text(message):
                 
                 if(sinkSize < minSize or sinkSize > maxSize):
                     bot.send_message(message.chat.id, f"Неверный размер мойки\nmin: {minSize}\nmax: {maxSize}")
+                elif(sinkSize > width):
+                    bot.send_message(message.chat.id, f"Неверный размер мойки\nМойка больше стены!")
                 else:
                     plankArr[0].addModule(sinkSize)
 
@@ -170,51 +167,15 @@ def get_text(message):
                 width = int(message.text)
                 wallCalc(width)
 
-                print("plankArr size: ", len(plankArr))
-                print("plankArr: ", len(plankArr) * plankSize)
-                print("leftSpace: ", leftSpace)
-                print()
-
-                bot.send_message(message.chat.id,"Укажи размер мойки")
+                bot.send_message(message.chat.id, "Укажи размер мойки")
                 moduleCalcState = 1
 
         else:
-            # if(buttonPressedCheck(message) == 0):
-            if(message.text == "Рассчет кол-ва модулей"):
-                print("Рассчет кол-ва модулей")
-                
-                menuState = 1
-                InitVariables()
-                bot.send_message(message.chat.id, "Отправь мне ширину кухни в мм - я все посчитаю")
-                return menuState
-
-            elif(message.text == "Рассчет цены"):
-                print("Рассчет цены")
-
-                menuState = 2
-                InitVariables()
-                bot.send_message(message.chat.id, "         ")
-                return menuState
-            
-            else:
-                bot.send_message(message.chat.id,"Это не число")
+            if(buttonPressedCheck(message) == 0):
+                bot.send_message(message.chat.id, "Это не число")
 
     if(menuState == 0):
-        if(message.text == "Рассчет кол-ва модулей"):
-            print("Рассчет кол-ва модулей")
-            
-            menuState = 1
-            bot.send_message(message.chat.id, "Отправь мне ширину кухни в мм - я все посчитаю")
-            return menuState
-
-        if(message.text == "Рассчет цены"):
-            print("Рассчет цены")
-
-            menuState = 2
-            bot.send_message(message.chat.id, "         ")
-            return menuState
-        
-    # buttonPressedCheck(message)
+        buttonPressedCheck(message)
 
 def wallCalc(width):
     global plankArr, leftSpace
@@ -258,8 +219,8 @@ def showResultsInTable(message):
     
     plankArrSize = len(plankArr)
     resultMessage = f'Кол-во модулей: {modulesCounter}\n\n'
-
     i = 0
+
     while i in range(plankArrSize):
         resultMessage += str(plankArr[i].getModules())
 
@@ -280,15 +241,23 @@ def showResultsInTable(message):
     
 def showResultsInRow(message):
     global leftSpace
-    resultMessage = 'Модули\n\n'
 
-    for item in modules:
-        while modules[item] > 0:
-            resultMessage += item + ' '
-            modules[item] -= 1
+    resultMessage = f'Кол-во модулей: {modulesCounter}\n\n'
+    plankArrSize = len(plankArr)
+    i = 0
 
-    if(leftSpace != 0):
-        resultMessage += "\nПоследний модуль " + str(leftSpace) + " мм"
+    if(modulesCounter > 2):
+        resultMessage += 'Мойка        Плита\n'
+        # resultMessage += '   М                 П\n'
+
+    while i in range(plankArrSize):
+        for module in plankArr[i].getModules():
+            resultMessage += '[' + str(module) + ']'
+
+        i += 1
+
+    if(leftSpace <= fillerSize and leftSpace > 0):
+        resultMessage += f"\nЗаглушка: {leftSpace}\n"
 
     bot.send_message(message.chat.id, resultMessage)
     
