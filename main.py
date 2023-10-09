@@ -1,4 +1,5 @@
 import telebot, json
+from telebot import types
 
 modulesCounter = 0
 
@@ -50,9 +51,9 @@ def createModulesHashTable():
     return modules
 
 def InitVariables():
-    global state, plankArr, width, sinkSize, cookingSize, modules, leftSpace, modulesCounter
+    global moduleCalcState, plankArr, width, sinkSize, cookingSize, modules, leftSpace, modulesCounter
 
-    state = 0
+    moduleCalcState = 0
     plankArr = []
     width = 0
     sinkSize = 0
@@ -69,7 +70,9 @@ plankSize = settings['plankSize']            # Длина доски (загот
 defaultModule = settings['defaultModule']
 fillerSize = settings['fillerSize']
 
-state = 0
+menuState = 0
+costCalcState = 0
+moduleCalcState = 0
 plankArr = []
 
 width = 0
@@ -82,68 +85,136 @@ minimumForCooking = (minSize * 2) + (plankSize - minSize)
 
 bot = telebot.TeleBot(settings['token'])
 
+def buttonPressedCheck(message):
+    global menuState
+
+    if(message.text == "Рассчет кол-ва модулей"):
+        print("Рассчет кол-ва модулей")
+        
+        menuState = 1
+        bot.send_message(message.chat.id, "Отправь мне ширину кухни в мм - я все посчитаю")
+        return menuState
+
+    if(message.text == "Рассчет цены"):
+        print("Рассчет цены")
+
+        menuState = 2
+        bot.send_message(message.chat.id, "         ")
+        return menuState
+    
+    return 0
+
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    bot.send_message(message.chat.id,"Привет ✌️ Я бот-сборщик мебели!")
-    bot.send_message(message.chat.id,"Отправь мне ширину кухни в мм - я все посчитаю")
-    
+    global menuState
+
+    menuState = 0
     InitVariables()
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn1 = types.KeyboardButton(text= "Рассчет кол-ва модулей")
+    btn2 = types.KeyboardButton(text= "Рассчет цены")
+    markup.add(btn1, btn2)
+
+    bot.send_message(message.chat.id,"Привет ✌️ Я бот-сборщик мебели!", reply_markup=markup)
 
 @bot.message_handler(content_types='text')
 def get_text(message):
-    global state, width, sinkSize, cookingSize, plankArr
+    global menuState, moduleCalcState, width, sinkSize, cookingSize, plankArr
 
-    if(message.text.isnumeric()):
-        if(state == 2):
-            cookingSize = int(message.text)
+    if(menuState == 2):
+        print("menuState: ", menuState)
+        # buttonPressedCheck(message)
 
-            if( (cookingSize < minSize) or (cookingSize > maxSize) ):
-                bot.send_message(message.chat.id, f"Неверный размер плиты\nmin: {minSize}\nmax: {maxSize}")
-            elif( (plankArr[0].getWidth() + cookingSize) > width ):
-                bot.send_message(message.chat.id, "Суммарная ширина мойки и плиты и отступа между ними больше стены!")
-            else:
-                plankArr[1].addModule(cookingSize)
-                plankArr[1].addModule(plankArr[1].getFreeWidth())
-                globalCalc(message)
-                InitVariables()
-            
-        elif(state == 1):
-            sinkSize = int(message.text)
-            
-            if(sinkSize < minSize or sinkSize > maxSize):
-                bot.send_message(message.chat.id, f"Неверный размер мойки\nmin: {minSize}\nmax: {maxSize}")
-            else:
-                plankArr[0].addModule(sinkSize)
+    if(menuState == 1):
+        print("menuState: ", menuState)
 
-                if(width >= plankSize):
-                    plankArr[0].addModule(plankArr[0].getFreeWidth())
+        if(message.text.isnumeric()):
+            if(moduleCalcState == 2):
+                cookingSize = int(message.text)
+
+                if( (cookingSize < minSize) or (cookingSize > maxSize) ):
+                    bot.send_message(message.chat.id, f"Неверный размер плиты\nmin: {minSize}\nmax: {maxSize}")
+                elif( (plankArr[0].getWidth() + cookingSize) > width ):
+                    bot.send_message(message.chat.id, "Суммарная ширина мойки и плиты и отступа между ними больше стены!")
                 else:
-                    plankArr[0].addModule(width - plankArr[0].getBusyWidth())
-
-                if(width >= minimumForCooking):
-                    bot.send_message(message.chat.id,"Укажи размер плиты")
-                    state = 2
-                else:
-                    if(leftSpace > fillerSize):
-                        plankArr[1].addModule(leftSpace)
-
+                    plankArr[1].addModule(cookingSize)
+                    plankArr[1].addModule(plankArr[1].getFreeWidth())
                     globalCalc(message)
                     InitVariables()
+                
+            elif(moduleCalcState == 1):
+                sinkSize = int(message.text)
+                
+                if(sinkSize < minSize or sinkSize > maxSize):
+                    bot.send_message(message.chat.id, f"Неверный размер мойки\nmin: {minSize}\nmax: {maxSize}")
+                else:
+                    plankArr[0].addModule(sinkSize)
 
-        elif(state == 0):
-            width = int(message.text)
-            wallCalc(width)
+                    if(width >= plankSize):
+                        plankArr[0].addModule(plankArr[0].getFreeWidth())
+                    else:
+                        plankArr[0].addModule(width - plankArr[0].getBusyWidth())
 
-            print("plankArr size: ", len(plankArr))
-            print("plankArr: ", len(plankArr) * plankSize)
-            print("leftSpace: ", leftSpace)
-            print()
+                    if(width >= minimumForCooking):
+                        bot.send_message(message.chat.id,"Укажи размер плиты")
+                        moduleCalcState = 2
+                    else:
+                        if(leftSpace > fillerSize):
+                            plankArr[1].addModule(leftSpace)
 
-            bot.send_message(message.chat.id,"Укажи размер мойки")
-            state = 1
+                        globalCalc(message)
+                        InitVariables()
 
-    else:
-        bot.send_message(message.chat.id,"Это не число")
+            elif(moduleCalcState == 0):
+                width = int(message.text)
+                wallCalc(width)
+
+                print("plankArr size: ", len(plankArr))
+                print("plankArr: ", len(plankArr) * plankSize)
+                print("leftSpace: ", leftSpace)
+                print()
+
+                bot.send_message(message.chat.id,"Укажи размер мойки")
+                moduleCalcState = 1
+
+        else:
+            # if(buttonPressedCheck(message) == 0):
+            if(message.text == "Рассчет кол-ва модулей"):
+                print("Рассчет кол-ва модулей")
+                
+                menuState = 1
+                InitVariables()
+                bot.send_message(message.chat.id, "Отправь мне ширину кухни в мм - я все посчитаю")
+                return menuState
+
+            elif(message.text == "Рассчет цены"):
+                print("Рассчет цены")
+
+                menuState = 2
+                InitVariables()
+                bot.send_message(message.chat.id, "         ")
+                return menuState
+            
+            else:
+                bot.send_message(message.chat.id,"Это не число")
+
+    if(menuState == 0):
+        if(message.text == "Рассчет кол-ва модулей"):
+            print("Рассчет кол-ва модулей")
+            
+            menuState = 1
+            bot.send_message(message.chat.id, "Отправь мне ширину кухни в мм - я все посчитаю")
+            return menuState
+
+        if(message.text == "Рассчет цены"):
+            print("Рассчет цены")
+
+            menuState = 2
+            bot.send_message(message.chat.id, "         ")
+            return menuState
+        
+    # buttonPressedCheck(message)
 
 def wallCalc(width):
     global plankArr, leftSpace
