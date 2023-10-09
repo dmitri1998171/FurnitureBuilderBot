@@ -69,6 +69,13 @@ maxSize = settings['maxSize']
 plankSize = settings['plankSize']            # Длина доски (заготовки)
 defaultModule = settings['defaultModule']
 fillerSize = settings['fillerSize']
+moduleDetails = settings['moduleDetails']
+moduleDepth = settings['moduleDepth']
+plankThickness = settings['plankThickness']
+topPlankWidth = settings['topPlankWidth']
+skirtingHeight = settings['skirtingHeight']
+chipboardSquareSize = settings['chipboardSquareSize']
+chipboardCost = settings['chipboardCost']
 
 menuState = 0
 costCalcState = 0
@@ -97,7 +104,7 @@ def buttonPressedCheck(message):
     if(message.text == "Рассчет цены"):
         menuState = 2
         InitVariables()
-        bot.send_message(message.chat.id, "         ")
+        bot.send_message(message.chat.id, "Отправь мне ширину, высоту и глубину модуля в мм в формате ШхВхГ")
         return menuState
     
     return 0
@@ -121,7 +128,8 @@ def get_text(message):
     global menuState, moduleCalcState, width, sinkSize, cookingSize, plankArr
 
     if(menuState == 2):
-        print("menuState: ", menuState)
+        sizes = sizes.split('x')
+        costCalc(message, int(sizes[0]), int(sizes[1]), int(sizes[2]))
 
     if(menuState == 1):
         if(message.text.isnumeric()):
@@ -213,6 +221,27 @@ def moduleCalc():
                 plankArr[i].addModule(plankArr[i].getFreeWidth())
 
         i += 1
+
+def squareCalc(w, h, d, shelf = 0):
+    local_width = w * moduleDetails['basePanel'] - (plankThickness * 2)
+
+    square = local_width * (shelf + 1)              # дно и полки
+    square += (d * h) * 2                           # стойки
+    square += local_width * h                       # задник (ХДФ)
+    square += (local_width * topPlankWidth) * 2     # планки
+    square += local_width * skirtingHeight          # цоколь
+
+    return square
+
+def costCalc(message, w, h, d, shelf = 0):
+    square = squareCalc(w, h, d, shelf)
+
+    print("square in mm^2: ", square)
+    square /= 1000000
+    print("square in m^2: ", square)
+
+    cost = (chipboardCost * square) / chipboardSquareSize
+    bot.send_message(message.chat.id, f"Цена модуля: {cost}")
 
 def showResultsInTable(message):
     global leftSpace

@@ -5,5 +5,19 @@
     "maxSize": 900,
     "plankSize": 1200,
     "defaultModule": 800,
-    "fillerSize": 80
+    "fillerSize": 80,
+    "moduleDetails": {
+        "basePanel" : 1,
+        "crossPanel": 2,
+        "sidePanel": 2,
+        "shelf": 0,
+        "backPanel": 1,
+        "skirting": 1
+    },
+    "moduleDepth": 500,
+    "plankThickness": 16,
+    "topPlankWidth": 100,
+    "skirtingHeight": 95,
+    "chipboardSquareSize": 4.7, 
+    "chipboardCost": 50000
 }
