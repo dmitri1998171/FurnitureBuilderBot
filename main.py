@@ -127,10 +127,15 @@ def start_message(message):
 def get_text(message):
     global menuState, moduleCalcState, width, sinkSize, cookingSize, plankArr
 
+    # Рассчет цены
     if(menuState == 2):
-        sizes = sizes.split('x')
-        costCalc(message, int(sizes[0]), int(sizes[1]), int(sizes[2]))
+        sizes = message.text.split('x')
 
+        # width, height, depth
+        sizes = int(sizes[0]), int(sizes[1]), int(sizes[2])
+        costCalc(message, sizes)
+
+    # Рассчет кол-ва модулей
     if(menuState == 1):
         if(message.text.isnumeric()):
             if(moduleCalcState == 2):
@@ -222,26 +227,29 @@ def moduleCalc():
 
         i += 1
 
-def squareCalc(w, h, d, shelf = 0):
-    local_width = w * moduleDetails['basePanel'] - (plankThickness * 2)
+def squareCalc(sizes, shelf = 0):
+    local_width = sizes[0] * moduleDetails['basePanel'] - (plankThickness * 2)
 
     square = local_width * (shelf + 1)              # дно и полки
-    square += (d * h) * 2                           # стойки
-    square += local_width * h                       # задник (ХДФ)
+    square += (sizes[2] * sizes[1]) * 2             # стойки
+    square += local_width * sizes[1]                # задник (ХДФ)
     square += (local_width * topPlankWidth) * 2     # планки
     square += local_width * skirtingHeight          # цоколь
 
     return square
 
-def costCalc(message, w, h, d, shelf = 0):
-    square = squareCalc(w, h, d, shelf)
+def costCalc(message, sizes, shelf = 0):
+    global menuState
+    menuState = 0
 
-    print("square in mm^2: ", square)
+    square = squareCalc(sizes, shelf)
+
+    # print("square in mm^2: ", square)
     square /= 1000000
-    print("square in m^2: ", square)
+    # print("square in m^2: ", square)
 
-    cost = (chipboardCost * square) / chipboardSquareSize
-    bot.send_message(message.chat.id, f"Цена модуля: {cost}")
+    cost = round((chipboardCost * square) / chipboardSquareSize)
+    bot.send_message(message.chat.id, f"Цена модуля: {cost} руб.")
 
 def showResultsInTable(message):
     global leftSpace
